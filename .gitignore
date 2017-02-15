@@ -1,0 +1,15 @@
+# IntelliJ
+
+.idea/
+out/
+*.iws
+*.iml
+
+# SBT
+
+target/
+lib_managed/
+src_managed/
+project/boot/
+.history
+.cache
