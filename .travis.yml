@@ -1,0 +1,24 @@
+language: scala
+
+scala:
+  - 2.12.1
+
+jdk:
+  - oraclejdk8
+
+before_cache:
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt -name "*.lock" -delete
+
+cache:
+  directories:
+    - $HOME/.sbt
+    - $HOME/.ivy2
+
+script:
+  - sbt clean test
+
+after_success:
+  # Publish snapshots from master branch
+  - test $TRAVIS_BRANCH = "master" && sbt core/publish
