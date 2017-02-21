@@ -1,0 +1,45 @@
+import java.io.{InputStream, OutputStream}
+import java.util.{Arrays, List => JList}
+
+import com.google.cloud.dataflow.sdk.coders.Coder.Context
+import com.google.cloud.dataflow.sdk.coders.{Coder, StandardCoder}
+
+import scala.reflect.runtime.universe._
+
+object TupleCoders {
+
+  [#class Tuple1Coder
+    [[#T1: TypeTag#]]
+    ([#coder1: Coder[T1]#])
+    extends StandardCoder[Tuple1[[#T1#]]] {
+
+    val coders = Array([#coder1#])
+
+    override def encode(value: Tuple1[[#T1#]], out: OutputStream, context: Context): Unit = {
+      [#coder1.encode(value._1, out, context.nested)#
+      ]
+    }
+
+    override def decode(in: InputStream, context: Context): Tuple1[[#T1#]] = {
+      [#val v1 = coder1.decode(in, context.nested)#
+      ]
+      Tuple1([#v1#])
+    }
+
+    override def consistentWithEquals(): Boolean = coders.forall(_.consistentWithEquals)
+
+    override def getCoderArguments: JList[Coder[_]] = Arrays.asList(coders: _*)
+
+    override def verifyDeterministic(): Unit = {
+      [#verifyDeterministic("Coder1 must be deterministic", coder1)#
+      ]
+    }
+
+    override def registerByteSizeObserver(value: Tuple1[[#T1#]], observer: ElementByteSizeObserver, context: Context): Unit = {
+      [#coder1.registerByteSizeObserver(value._1, observer, context.nested)#
+      ]
+    }
+  }#
+
+  ]
+}

@@ -35,7 +35,7 @@ case class Tuple2Coder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends Standar
     aCoder.consistentWithEquals && bCoder.consistentWithEquals
   }
 
-  override def getCoderArguments: util.List[_ <: Coder[_]] = {
+  override def getCoderArguments: util.List[Coder[_]] = {
     java.util.Arrays.asList(aCoder, bCoder)
   }
 
