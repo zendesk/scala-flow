@@ -174,6 +174,10 @@ object Implicits {
       c => c.output(KV.of(c.element.getKey, f(c.element.getValue)))
     }
 
+    def flatMapValue[B: TypeTag](f: A => Iterable[B]): PCollection[KV[K, B]] = parDo {
+      c => f(c.element.getValue).foreach { value => c.output(KV.of(c.element.getKey, value)) }
+    }
+
     def combinePerKey(zero: A)(f: (A, A) => A): PCollection[KV[K, A]] = {
       val g = (input: JIterable[A]) => input.asScala.fold(zero)(f)
       collection.apply(Combine.perKey[K, A](asSimpleFn(g)))
