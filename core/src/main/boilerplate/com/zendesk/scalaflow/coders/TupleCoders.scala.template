@@ -18,6 +18,7 @@ object TupleCoders {
 }
 
 
+
 [2..22#object Tuple1Coder {
   def of[[#V1#]]([#coder1: Coder[V1]#]): Tuple1Coder[[#V1#]] = {
     new Tuple1Coder([#coder1#])
@@ -72,4 +73,3 @@ class Tuple1Coder[[#V1#]]([#coder1: Coder[V1]#]) extends StandardCoder[Tuple1[[#
 
 
 ]
-
