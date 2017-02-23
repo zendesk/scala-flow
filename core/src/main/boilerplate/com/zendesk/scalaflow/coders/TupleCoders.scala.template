@@ -1,67 +1,75 @@
+package com.zendesk.scalaflow.coders
+
 import java.io.{InputStream, OutputStream}
 import java.util.{List => JList}
 
+import com.fasterxml.jackson.annotation.{JsonCreator, JsonProperty}
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
 import com.google.cloud.dataflow.sdk.coders.{Coder, CoderRegistry, StandardCoder}
+import com.google.cloud.dataflow.sdk.util.PropertyNames.COMPONENT_ENCODINGS
 
 import scala.collection.JavaConverters._
 
 object TupleCoders {
-
-  def registerTupleCoders(coderRegistry: CoderRegistry ) = {
+  def register(coderRegistry: CoderRegistry ) = {
     [2..22#coderRegistry.registerCoder(classOf[Tuple1[[#_#]]], classOf[Tuple1Coder[[#_#]]])#
     ]
   }
+}
 
 
+[2..22#object Tuple1Coder {
+  def of[[#V1#]]([#coder1: Coder[V1]#]): Tuple1Coder[[#V1#]] = {
+    new Tuple1Coder([#coder1#])
+  }
 
-  [2..22#object Tuple1Coder {
-    def of[[#V1#]]([#coder1: Coder[V1]#]): Tuple1Coder[[#V1#]] = {
-      new Tuple1Coder([#coder1#])
-    }
+  @JsonCreator
+  def of(@JsonProperty(COMPONENT_ENCODINGS) components: JList[Coder[_]]): Tuple1Coder[[#_#]] = {
+    of([#components.get(0)#])
+  }
 
-    def getInstanceComponents[[#V1#]](tuple: Tuple1[[#V1#]]): JList[Object] = {
-      tuple.productIterator.map(_.asInstanceOf[Object]).toList.asJava
+  def getInstanceComponents[[#V1#]](tuple: Tuple1[[#V1#]]): JList[Object] = {
+    tuple.productIterator.map(_.asInstanceOf[Object]).toList.asJava
+  }
+}
+
+class Tuple1Coder[[#V1#]]([#coder1: Coder[V1]#]) extends StandardCoder[Tuple1[[#V1#]]] {
+
+  private val coders = Array([#coder1#])
+
+  override def getEncodingId = "Tuple1Coder" + coders.mkString("[", ", ", "]")
+
+  override def consistentWithEquals(): Boolean = coders.forall(_.consistentWithEquals)
+
+  override def getCoderArguments: JList[Coder[_]] = coders.map(_.asInstanceOf[Coder[_]]).toList.asJava
+
+  override def verifyDeterministic(): Unit = {
+    coders.zipWithIndex.foreach { case (coder, index) =>
+      verifyDeterministic(s"Coder$index must be deterministic", coder)
     }
   }
 
-  class Tuple1Coder[[#V1#]]([#coder1: Coder[V1]#]) extends StandardCoder[Tuple1[[#V1#]]] {
-
-    private val coders = Array([#coder1#])
-
-    override def getEncodingId = "Tuple1Coder" + coders.mkString("[", ", ", "]")
-
-    override def consistentWithEquals(): Boolean = coders.forall(_.consistentWithEquals)
-
-    override def getCoderArguments: JList[Coder[_]] = coders.map(_.asInstanceOf[Coder[_]]).toList.asJava
-
-    override def verifyDeterministic(): Unit = {
-      coders.zipWithIndex.foreach { case (coder, index) =>
-        verifyDeterministic(s"Coder$index must be deterministic", coder)
-      }
+  override def structuralValue(value: Tuple1[[#V1#]]): Object = {
+    if (consistentWithEquals) {
+      value
+    } else {
+      Tuple1([#coder1.structuralValue(value._1)#])
     }
+  }
 
-    override def structuralValue(value: Tuple1[[#V1#]]): AnyRef = {
-      if (consistentWithEquals) {
-        value
-      } else {
-        Tuple1([#coder1.structuralValue(value._1)#])
-      }
-    }
+  override def encode(value: Tuple1[[#V1#]], out: OutputStream, context: Context): Unit = {
+    [#coder1.encode(value._1, out, context.nested)#
+    ]
+  }
 
-    override def encode(value: Tuple1[[#V1#]], out: OutputStream, context: Context): Unit = {
-      [#coder1.encode(value._1, out, context.nested)#
-      ]
-    }
-
-    override def decode(in: InputStream, context: Context): Tuple1[[#V1#]] = {
-      [#val v1 = coder1.decode(in, context.nested)#
-      ]
-      Tuple1([#v1#])
-    }
-  }#
+  override def decode(in: InputStream, context: Context): Tuple1[[#V1#]] = {
+    [#val v1 = coder1.decode(in, context.nested)#
+    ]
+    Tuple1([#v1#])
+  }
+}#
 
 
 
-  ]
-}
+]
+

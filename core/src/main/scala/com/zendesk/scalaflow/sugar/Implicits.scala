@@ -9,7 +9,6 @@ import com.google.cloud.dataflow.sdk.coders.{DoubleCoder, VarIntCoder, VarLongCo
 import com.google.cloud.dataflow.sdk.io.PubsubIO
 import com.google.cloud.dataflow.sdk.transforms._
 import com.google.cloud.dataflow.sdk.values._
-import com.zendesk.scalaflow.coders.Tuple2Coder
 import com.zendesk.scalaflow.coders._
 import org.joda.time.{Duration, Instant}
 
@@ -40,11 +39,10 @@ object Implicits {
       coderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
       coderRegistry.registerCoder(classOf[Long], classOf[VarLongCoder])
       coderRegistry.registerCoder(classOf[Double], classOf[DoubleCoder])
-      coderRegistry.registerCoder(classOf[(_, _)], classOf[Tuple2Coder[_, _]])
-      coderRegistry.registerCoder(classOf[(_, _, _)], classOf[Tuple3Coder[_, _, _]])
       coderRegistry.registerCoder(classOf[Option[_]], classOf[OptionCoder[_]])
       coderRegistry.registerCoder(classOf[Try[_]], classOf[TryCoder[_]])
       coderRegistry.registerCoder(classOf[Either[_, _]], classOf[EitherCoder[_, _]])
+      TupleCoders.register(coderRegistry)
       pipeline
     }
 
