@@ -1,7 +1,5 @@
 package com.zendesk.scalaflow.sugar
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import com.google.cloud.dataflow.sdk.coders.VarIntCoder
 import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
