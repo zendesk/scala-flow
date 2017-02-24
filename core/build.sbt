@@ -13,3 +13,5 @@ libraryDependencies ++= Seq(
   "org.hamcrest" % "hamcrest-library" % "1.3" % Test,
   "junit" % "junit" % "4.12" % Test
 )
+
+enablePlugins(BoilerplatePlugin)
