@@ -76,7 +76,7 @@ For example:
 
 #### Case Class Coders
 
-You can create a custom coder for your case class using one the `registerCaseClass` methods, for case classes with up to 22 members. 
+You can create a custom coder for your case class using the `registerCaseClass` method, for case classes with up to 22 members. 
 
 For example:
 ```scala
