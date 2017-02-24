@@ -20,7 +20,7 @@ object CaseClassCoders {
 
     type TT[X] = TypeTag[X]
 
-    def registerCaseClass0[P <: Product : ClassTag](construct: () => P): Pipeline = {
+    def registerCaseClass[P <: Product : ClassTag](construct: () => P): Pipeline = {
       val intermediate = VoidCoder.of()
       val to = new CodingFunction[P, Void] {
         override def apply(p: P) = null
@@ -33,7 +33,7 @@ object CaseClassCoders {
       pipeline
     }
 
-    def registerCaseClass1[V1: TT, P <: Product : ClassTag](construct: (V1) => P): Pipeline = {
+    def registerCaseClass[V1: TT, P <: Product : ClassTag](construct: (V1) => P): Pipeline = {
       val intermediate = coderFor[V1]
       val to = new CodingFunction[P, V1] {
         override def apply(p: P) = p.productElement(0).asInstanceOf[V1]
@@ -46,7 +46,7 @@ object CaseClassCoders {
       pipeline
     }
 
-    [2..22#def registerCaseClass1[[#V1: TT#], P <: Product : ClassTag](construct: ([#V1#]) => P): Pipeline = {
+    [2..22#def registerCaseClass[[#V1: TT#], P <: Product : ClassTag](construct: ([#V1#]) => P): Pipeline = {
       val intermediate = Tuple1Coder.of([#coderFor[V1]#])
       val to = new CodingFunction[P, Tuple1[[#V1#]]] {
         override def apply(p: P) = {

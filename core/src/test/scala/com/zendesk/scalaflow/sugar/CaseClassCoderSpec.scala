@@ -19,7 +19,7 @@ class CaseClassCoderSpec extends FlatSpec with Matchers {
   behavior of "CaseClassCoders"
 
   it should "handle zero member case class" in {
-    val pipeline = testPipeline().registerCaseClass0(Foo)
+    val pipeline = testPipeline().registerCaseClass(Foo)
     val output = pipeline
       .apply(Create.of(Foo()))
       .map(identity)
@@ -29,7 +29,7 @@ class CaseClassCoderSpec extends FlatSpec with Matchers {
   }
 
   it should "handle single member case class" in {
-    val pipeline = testPipeline().registerCaseClass1(Bar)
+    val pipeline = testPipeline().registerCaseClass(Bar)
     val output = pipeline
       .apply(Create.of(Bar("Fred")))
       .map(_.copy(name = "John"))
@@ -39,7 +39,7 @@ class CaseClassCoderSpec extends FlatSpec with Matchers {
   }
 
   it should "handle double member case classes" in {
-    val pipeline = testPipeline().registerCaseClass2(Qux)
+    val pipeline = testPipeline().registerCaseClass(Qux)
     val output = pipeline
       .apply(Create.of(Qux("Fred", 27)))
       .map(_.copy(age = 35))
@@ -49,7 +49,12 @@ class CaseClassCoderSpec extends FlatSpec with Matchers {
   }
 
   it should "handle nested case classes" in {
-    val pipeline = testPipeline().registerCaseClass2(Qux)
+    val pipeline = testPipeline()
+      .registerCaseClass(Foo)
+      .registerCaseClass(Bar)
+      .registerCaseClass(Qux)
+      .registerCaseClass(Wibble)
+
     val output = pipeline
       .apply(Create.of(Wibble(Foo(), Bar("John"), Qux("Fred", 27))))
       .map(_.copy(qux = Qux("Fred", 35)))
