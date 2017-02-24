@@ -26,7 +26,7 @@ A `registerScalaCoders` methods has been added to `Pipeline`. This adds Coders f
   
   * `Int`, `Long`, `Double`
   * `Option`, `Try`, `Either`
-  * `Tuple2` to `Tuple3`
+  * `Tuple2` to `Tuple22`
 
 and then returns the pipeline itself so that it can be invoked fluently.
 
@@ -73,6 +73,30 @@ For example:
     .foreach(println) // Local logging only - better to use Log4j for performance
     .apply(... /*continue as normal*/) 
 ```
+
+#### Case Class Coders
+
+You can create a custom coder for your case class using the `registerCaseClass` method, for case classes with up to 22 members. 
+
+For example:
+```scala
+case class Foo(name: String)
+case class Bar(name: String, age: Int)
+
+val pipeline = Pipeline(...)
+  .registerCaseClass(Foo)
+  .registerCaseClass(Bar)
+
+```
+
+##### Note:
+
+Since case classes implement `Serializable` it isn't strictly needed to always register your classes. By default DataFlow will use the `SerializableCoder`. 
+However it's useful for the following cases:
+
+* You wish to use a case class as a `KV` key. Serializable classes are not considered deterministic and are not allowed as keys.
+* You wish to have non-serializable values in your case class. As serializable classes must themselves only recursively contain serializable members, this limits the types your case class can contain.  
+* The Java serialization performance is inadequate
 
 ## Why create a Scala Dataflow library? 
 

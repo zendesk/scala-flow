@@ -1,0 +1,70 @@
+package com.zendesk.scalaflow.sugar;
+
+import com.google.cloud.dataflow.sdk.Pipeline
+import com.google.cloud.dataflow.sdk.coders.{DelegateCoder, VoidCoder}
+import com.google.cloud.dataflow.sdk.coders.DelegateCoder.CodingFunction
+
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
+
+import com.zendesk.scalaflow.coders._
+import com.zendesk.scalaflow.sugar.Implicits._
+
+object CaseClassCoders {
+
+  implicit class ReallyRichPipeline(pipeline: Pipeline) {
+
+    private val registry = pipeline.getCoderRegistry
+    private def coderFor[T](implicit tag: TypeTag[T]) = registry.getCoder(tag.asTypeDescriptor)
+    private def classFor[T](implicit tag: ClassTag[T]) = tag.runtimeClass.asInstanceOf[Class[T]]
+
+    type TT[X] = TypeTag[X]
+
+    def registerCaseClass[P <: Product : ClassTag](construct: () => P): Pipeline = {
+      val intermediate = VoidCoder.of()
+      val to = new CodingFunction[P, Void] {
+        override def apply(p: P) = null
+      }
+      val from = new CodingFunction[Void, P] {
+        override def apply(v: Void) = construct()
+      }
+
+      registry.registerCoder(classFor[P], DelegateCoder.of(intermediate, to, from))
+      pipeline
+    }
+
+    def registerCaseClass[V1: TT, P <: Product : ClassTag](construct: (V1) => P): Pipeline = {
+      val intermediate = coderFor[V1]
+      val to = new CodingFunction[P, V1] {
+        override def apply(p: P) = p.productElement(0).asInstanceOf[V1]
+      }
+      val from = new CodingFunction[V1, P] {
+        override def apply(v: V1) = construct(v)
+      }
+
+      registry.registerCoder(classFor[P], DelegateCoder.of(intermediate, to, from))
+      pipeline
+    }
+
+    [2..22#def registerCaseClass[[#V1: TT#], P <: Product : ClassTag](construct: ([#V1#]) => P): Pipeline = {
+      val intermediate = Tuple1Coder.of([#coderFor[V1]#])
+      val to = new CodingFunction[P, Tuple1[[#V1#]]] {
+        override def apply(p: P) = {
+          [#val v1 = p.productElement(0).asInstanceOf[V1]#
+          ]
+          Tuple1([#v1#])
+        }
+      }
+      val from = new CodingFunction[Tuple1[[#V1#]], P] {
+        override def apply(t: Tuple1[[#V1#]]) = {
+          construct([#t._1#])
+        }
+      }
+
+      registry.registerCoder(classFor[P], DelegateCoder.of(intermediate, to, from))
+      pipeline
+    }#
+
+    ]
+  }
+}
