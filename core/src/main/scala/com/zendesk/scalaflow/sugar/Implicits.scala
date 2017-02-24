@@ -183,6 +183,12 @@ object Implicits {
       collection.apply(Combine.perKey[K, A](asSimpleFn(g)))
     }
 
+    def groupByKey: PCollection[KV[K, List[A]]] = {
+      collection
+        .apply(GroupByKey.create[K, A])
+        .mapValue(_.asScala.toList)
+    }
+
     def extractTimestamp: PCollection[KV[K, (A, Instant)]] = parDo {
       c => c.output(KV.of(c.element.getKey, (c.element.getValue, c.timestamp)))
     }

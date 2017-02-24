@@ -5,6 +5,7 @@ import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{KV, PCollection}
+import com.zendesk.scalaflow.coders.{ListCoder, SetCoder}
 import com.zendesk.scalaflow.sugar.Implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -28,12 +29,33 @@ class RichKVCollectionSpec extends FlatSpec with Matchers {
     pipeline.run()
   }
 
+  "groupByKey" should "group by key" in {
+    val pipeline = testPipeline()
+    val input = List("john" -> 42, "maggie" -> 39, "john" -> 25).map { case (k, v) => KV.of(k, v) }
+
+    val output = pipeline
+      .apply(Create.of(input.asJava))
+      .groupByKey
+      .mapValue(_.toSet)
+
+    DataflowAssert
+      .that(output)
+      .containsInAnyOrder(
+        KV.of("john", Set(42, 25)),
+        KV.of("maggie", Set(39))
+      )
+
+    pipeline.run()
+  }
+
   private def testPipeline() = {
     val pipelineOptions = TestPipeline.testingPipelineOptions
     pipelineOptions.setStableUniqueNames(OFF)
 
     val pipeline = TestPipeline.fromOptions(pipelineOptions)
     pipeline.getCoderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
+    pipeline.getCoderRegistry.registerCoder(classOf[List[_]], classOf[ListCoder[_]])
+    pipeline.getCoderRegistry.registerCoder(classOf[Set[_]], classOf[SetCoder[_]])
     pipeline
   }
 }
