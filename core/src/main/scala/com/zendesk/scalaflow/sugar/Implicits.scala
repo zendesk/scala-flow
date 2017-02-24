@@ -39,6 +39,8 @@ object Implicits {
       coderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
       coderRegistry.registerCoder(classOf[Long], classOf[VarLongCoder])
       coderRegistry.registerCoder(classOf[Double], classOf[DoubleCoder])
+      coderRegistry.registerCoder(classOf[List[_]], classOf[ListCoder[_]])
+      coderRegistry.registerCoder(classOf[Set[_]], classOf[SetCoder[_]])
       coderRegistry.registerCoder(classOf[Option[_]], classOf[OptionCoder[_]])
       coderRegistry.registerCoder(classOf[Try[_]], classOf[TryCoder[_]])
       coderRegistry.registerCoder(classOf[Either[_, _]], classOf[EitherCoder[_, _]])
