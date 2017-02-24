@@ -76,7 +76,7 @@ For example:
 
 #### Case Class Coders
 
-You can create custom coders for your case clasess using the `registerCaseClass0` to `registerCaseClass22` methods, where the number at the end of the method name matcher the number of fields in the case class. 
+You can create a custom coder for your case class using one of the `registerCaseClass0` to `registerCaseClass22` methods, where the number at the end of the method name matches the number of fields in the case class. 
 
 For example:
 ```scala
