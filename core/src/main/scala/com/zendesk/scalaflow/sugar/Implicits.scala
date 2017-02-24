@@ -39,6 +39,8 @@ object Implicits {
       coderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
       coderRegistry.registerCoder(classOf[Long], classOf[VarLongCoder])
       coderRegistry.registerCoder(classOf[Double], classOf[DoubleCoder])
+      coderRegistry.registerCoder(classOf[List[_]], classOf[ListCoder[_]])
+      coderRegistry.registerCoder(classOf[Set[_]], classOf[SetCoder[_]])
       coderRegistry.registerCoder(classOf[Option[_]], classOf[OptionCoder[_]])
       coderRegistry.registerCoder(classOf[Try[_]], classOf[TryCoder[_]])
       coderRegistry.registerCoder(classOf[Either[_, _]], classOf[EitherCoder[_, _]])
@@ -179,6 +181,12 @@ object Implicits {
     def combinePerKey(zero: A)(f: (A, A) => A): PCollection[KV[K, A]] = {
       val g = (input: JIterable[A]) => input.asScala.fold(zero)(f)
       collection.apply(Combine.perKey[K, A](asSimpleFn(g)))
+    }
+
+    def groupByKey: PCollection[KV[K, List[A]]] = {
+      collection
+        .apply(GroupByKey.create[K, A])
+        .mapValue(_.asScala.toList)
     }
 
     def extractTimestamp: PCollection[KV[K, (A, Instant)]] = parDo {
