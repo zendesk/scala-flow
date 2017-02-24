@@ -12,6 +12,7 @@ import Implicits._
 case class Foo()
 case class Bar(name: String)
 case class Qux(name: String, age: Int)
+case class Wibble(foo: Foo, bar: Bar, qux: Qux)
 
 class CaseClassCoderSpec extends FlatSpec with Matchers {
 
@@ -44,6 +45,16 @@ class CaseClassCoderSpec extends FlatSpec with Matchers {
       .map(_.copy(age = 35))
 
     DataflowAssert.that(output).containsInAnyOrder(Qux("Fred", 35))
+    pipeline.run()
+  }
+
+  it should "handle nested case classes" in {
+    val pipeline = testPipeline().registerCaseClass2(Qux)
+    val output = pipeline
+      .apply(Create.of(Wibble(Foo(), Bar("John"), Qux("Fred", 27))))
+      .map(_.copy(qux = Qux("Fred", 35)))
+
+    DataflowAssert.that(output).containsInAnyOrder(Wibble(Foo(), Bar("John"), Qux("Fred", 35)))
     pipeline.run()
   }
 
