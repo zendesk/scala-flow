@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.zendesk",
-  version := "0.0.1-SNAPSHOT",
+  version := "0.0.2-SNAPSHOT",
   
   scalaVersion := "2.12.1",
   scalacOptions ++= Seq("-feature"),
