@@ -6,11 +6,12 @@ import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{KV, TimestampedValue}
 import com.zendesk.scalaflow.coders.Tuple2Coder
-import com.zendesk.scalaflow.sugar.Implicits._
 import org.joda.time.DateTime
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.JavaConverters._
+
+import CollectionOps._
 
 class RichCollectionSpec extends FlatSpec with Matchers {
 

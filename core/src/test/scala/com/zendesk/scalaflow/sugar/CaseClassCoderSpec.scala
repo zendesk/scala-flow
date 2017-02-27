@@ -7,7 +7,6 @@ import com.google.cloud.dataflow.sdk.transforms.Create
 import org.scalatest.{FlatSpec, Matchers}
 
 import CaseClassCoders._
-import Implicits._
 
 case class Foo()
 case class Bar(name: String)
