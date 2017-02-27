@@ -32,8 +32,8 @@ trait KVCollectionOps {
       collection.apply(Combine.perKey[K, A](asSimpleFn(g)))
     }
 
-    def groupByKey: PCollection[KV[K, Iterable[A]]] = {
-      collection.apply(GroupByKey.create[K, A]).mapValue(_.asScala)
+    def groupByKey: PCollection[KV[K, List[A]]] = {
+      collection.apply(GroupByKey.create[K, A]).mapValue(_.asScala.toList)
     }
 
     def extractTimestamp: PCollection[KV[K, (A, Instant)]] = parDo {
