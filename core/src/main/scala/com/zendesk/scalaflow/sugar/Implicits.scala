@@ -1,6 +1,6 @@
 package com.zendesk.scalaflow.sugar
 
-import java.lang.reflect.{ParameterizedType, Type => JType}
+import java.lang.reflect.{GenericArrayType, ParameterizedType, Type => JType}
 import java.lang.{Iterable => JIterable}
 
 import com.google.cloud.bigtable.dataflow.CloudBigtableIO
@@ -55,6 +55,7 @@ object Implicits {
   }
 
   implicit class RichTypeTag[X](tag: TypeTag[X]) {
+    import definitions._
 
     val asTypeDescriptor: TypeDescriptor[X] = {
       TypeDescriptor.of(convert(tag.tpe)).asInstanceOf[TypeDescriptor[X]]
@@ -64,24 +65,41 @@ object Implicits {
       // Make sure to get the raw underlying types,
       // in case tpe is an alias e.g type Foo = List[Int]
       val expanded = tpe.dealias
-      val clazz = tag.mirror.runtimeClass(expanded.typeSymbol.asClass)
+      val clazz = tag.mirror.runtimeClass(expanded)
 
-      if (expanded == typeOf[Int]) {
-        classOf[java.lang.Integer]
-      }
-      else if (expanded == typeOf[Long]) {
-        classOf[java.lang.Long]
-      }
-      else if (expanded == typeOf[Double]) {
-        classOf[java.lang.Double]
-      }
-      else if (expanded.typeArgs.isEmpty) {
+      if (clazz.isPrimitive) convertPrimitive(expanded, clazz)
+      else if (clazz.isArray) convertArray(expanded, clazz)
+      else convertObject(expanded, clazz)
+    }
+
+    private def convertPrimitive(tpe: Type, clazz: Class[_]) = tpe match {
+      case CharTpe => classOf[java.lang.Character]
+      case ByteTpe => classOf[java.lang.Byte]
+      case ShortTpe => classOf[java.lang.Short]
+      case IntTpe => classOf[java.lang.Integer]
+      case LongTpe => classOf[java.lang.Long]
+      case FloatTpe => classOf[java.lang.Float]
+      case DoubleTpe => classOf[java.lang.Double]
+      case _ => throw new IllegalArgumentException(s"Unsupported primitive type $clazz")
+    }
+
+    private def convertArray[T](tpe: Type, clazz: Class[_]) = {
+      val componentType = tpe.typeArgs.head
+
+      if (componentType.typeArgs.isEmpty) {
         clazz
+      } else new GenericArrayType {
+        override def getGenericComponentType = convert(componentType)
       }
-      else new ParameterizedType {
-        override def getOwnerType: JType = null
-        override def getRawType: JType = clazz
-        override def getActualTypeArguments: Array[JType] = expanded.typeArgs.map(convert).toArray
+    }
+
+    private def convertObject(tpe: Type, clazz: Class[_]) = {
+      if (tpe.typeArgs.isEmpty) {
+        clazz
+      } else new ParameterizedType {
+        override def getOwnerType = null
+        override def getRawType = clazz
+        override def getActualTypeArguments = tpe.typeArgs.map(convert).toArray
       }
     }
   }
