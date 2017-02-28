@@ -6,11 +6,13 @@ import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{KV, PCollection}
 import com.zendesk.scalaflow.coders.{ListCoder, SetCoder}
-import com.zendesk.scalaflow.sugar.Implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
+
+import CollectionOps._
+import KVCollectionOps._
 
 class RichKVCollectionSpec extends FlatSpec with Matchers {
 

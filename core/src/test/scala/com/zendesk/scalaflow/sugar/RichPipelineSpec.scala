@@ -3,10 +3,12 @@ package com.zendesk.scalaflow.sugar
 import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
-import com.zendesk.scalaflow.sugar.Implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.util.Try
+
+import CollectionOps._
+import PipelineOps._
 
 class RichPipelineSpec extends FlatSpec with Matchers {
 

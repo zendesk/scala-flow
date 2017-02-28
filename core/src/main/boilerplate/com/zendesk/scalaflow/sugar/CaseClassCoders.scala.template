@@ -8,11 +8,11 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 import com.zendesk.scalaflow.coders._
-import com.zendesk.scalaflow.sugar.Implicits._
+import TypeTagOps._
 
 object CaseClassCoders {
 
-  implicit class ReallyRichPipeline(pipeline: Pipeline) {
+  implicit class RichCaseClassPipeline(pipeline: Pipeline) {
 
     private val registry = pipeline.getCoderRegistry
     private def coderFor[T](implicit tag: TypeTag[T]) = registry.getCoder(tag.asTypeDescriptor)
