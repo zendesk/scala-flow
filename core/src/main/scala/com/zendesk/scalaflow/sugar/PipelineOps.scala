@@ -3,11 +3,11 @@ package com.zendesk.scalaflow.sugar
 import com.google.cloud.bigtable.dataflow.CloudBigtableIO
 import com.google.cloud.dataflow.sdk.Pipeline
 import com.google.cloud.dataflow.sdk.coders.{Coder, CoderFactory, DoubleCoder, VarIntCoder, VarLongCoder}
-import com.google.cloud.dataflow.sdk.values.{PBegin, POutput}
+import com.google.cloud.dataflow.sdk.values.{PBegin, PCollection, POutput}
 import com.zendesk.scalaflow.coders._
 
 import scala.util.Try
-
+import scala.reflect.runtime.universe._
 import WrapperOps._
 
 trait PipelineOps {
@@ -50,8 +50,14 @@ trait PipelineOps {
   }
 
   implicit class RichBegin(begin: PBegin) {
+    import CollectionOps.RichCollection
+
     def transformWith[A <: POutput](name: String)(f: PBegin => A) = {
       begin.apply(name, asPTransform(f))
+    }
+
+    def flatten[A: TypeTag](first: PCollection[A], second: PCollection[A], others: PCollection[A]*): PCollection[A] = {
+      first.flattenWith(second, others: _*)
     }
   }
 
