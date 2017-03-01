@@ -10,7 +10,7 @@ import scala.reflect.runtime.universe._
 import com.zendesk.scalaflow.coders._
 import TypeTagOps._
 
-object CaseClassCoders {
+trait CaseClassOps {
 
   implicit class RichCaseClassPipeline(pipeline: Pipeline) {
 
@@ -68,3 +68,5 @@ object CaseClassCoders {
     ]
   }
 }
+
+object CaseClassOps extends CaseClassOps
