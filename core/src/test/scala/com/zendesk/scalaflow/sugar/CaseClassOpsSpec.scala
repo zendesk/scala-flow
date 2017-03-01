@@ -6,14 +6,17 @@ import com.google.cloud.dataflow.sdk.transforms.Create
 
 import org.scalatest.{FlatSpec, Matchers}
 
-import CaseClassCoders._
+import CaseClassOps._
 
-case class Foo()
-case class Bar(name: String)
-case class Qux(name: String, age: Int)
-case class Wibble(foo: Foo, bar: Bar, qux: Qux)
+object CaseClassOpsSpec {
+  case class Foo()
+  case class Bar(name: String)
+  case class Qux(name: String, age: Int)
+  case class Wibble(foo: Foo, bar: Bar, qux: Qux)
+}
 
-class CaseClassCoderSpec extends FlatSpec with Matchers {
+class CaseClassOpsSpec extends FlatSpec with Matchers {
+  import CaseClassOpsSpec._
 
   behavior of "CaseClassCoders"
 
