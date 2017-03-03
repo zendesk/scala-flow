@@ -7,8 +7,6 @@ import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{PBegin, PCollection, POutput}
 import com.zendesk.scalaflow.sugar.WrapperOps._
 
-import scala.reflect.runtime.universe._
-
 trait PipelineOps {
 
   implicit class RichPipeline(pipeline: Pipeline) {
@@ -29,7 +27,7 @@ trait PipelineOps {
       begin.apply(name, asPTransform(f))
     }
 
-    def flatten[A: TypeTag : Coder](first: PCollection[A], second: PCollection[A], others: PCollection[A]*): PCollection[A] = {
+    def flatten[A : Coder](first: PCollection[A], second: PCollection[A], others: PCollection[A]*): PCollection[A] = {
       first.flattenWith(second, others: _*)
     }
   }
