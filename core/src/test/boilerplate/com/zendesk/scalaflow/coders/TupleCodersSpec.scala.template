@@ -26,7 +26,8 @@ class TupleCodersSpec extends FlatSpec with Matchers {
     val x = roll(1)
     val pipeline = testPipeline()
     val output = pipeline
-      .apply(Create.of(([#x(1)#])))
+      .begin
+      .transform(Create.of(([#x(1)#])))
       .map(t => ([#x(2)#]))
 
     DataflowAssert.that(output).containsInAnyOrder(([#x(2)#]))
