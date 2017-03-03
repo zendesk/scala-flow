@@ -1,17 +1,14 @@
 package com.zendesk.scalaflow.sugar
 
-import com.google.cloud.dataflow.sdk.coders.VarIntCoder
 import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{KV, TimestampedValue}
-import com.zendesk.scalaflow.coders.Tuple2Coder
+import com.zendesk.scalaflow._
 import org.joda.time.DateTime
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.JavaConverters._
-
-import CollectionOps._
 
 class RichCollectionSpec extends FlatSpec with Matchers {
 
@@ -90,7 +87,6 @@ class RichCollectionSpec extends FlatSpec with Matchers {
 
   it should "extract timestamps" in {
     val pipeline = testPipeline()
-    pipeline.getCoderRegistry.registerCoder(classOf[Tuple2[_, _]], classOf[Tuple2Coder[_, _]])
 
     val now = DateTime.now()
     val yesterday = now.minusDays(1).toInstant
@@ -110,8 +106,6 @@ class RichCollectionSpec extends FlatSpec with Matchers {
     val pipelineOptions = TestPipeline.testingPipelineOptions
     pipelineOptions.setStableUniqueNames(OFF)
 
-    val pipeline = TestPipeline.fromOptions(pipelineOptions)
-    pipeline.getCoderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
-    pipeline
+    TestPipeline.fromOptions(pipelineOptions)
   }
 }

@@ -3,10 +3,8 @@ package com.zendesk.scalaflow.sugar
 import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
-
+import com.zendesk.scalaflow._
 import org.scalatest.{FlatSpec, Matchers}
-
-import CaseClassOps._
 
 object CaseClassOpsSpec {
   case class Foo()

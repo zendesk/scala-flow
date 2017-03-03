@@ -5,7 +5,7 @@ import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
 import org.scalatest.{FlatSpec, Matchers}
 
-import com.zendesk.scalaflow.sugar.CollectionOps._
+import com.zendesk.scalaflow._
 
 case object Data {
   val data = Array([#"1"#])
@@ -19,9 +19,7 @@ class TupleCodersSpec extends FlatSpec with Matchers {
     val pipelineOptions = TestPipeline.testingPipelineOptions
     pipelineOptions.setStableUniqueNames(OFF)
 
-    val pipeline = TestPipeline.fromOptions(pipelineOptions)
-    TupleCoders.register(pipeline.getCoderRegistry)
-    pipeline
+    TestPipeline.fromOptions(pipelineOptions)
   }
 
   [2..22#"TupleCoder1" should "encode and decode values" in {

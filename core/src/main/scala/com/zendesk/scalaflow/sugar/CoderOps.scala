@@ -31,6 +31,8 @@ trait CoderOps {
 
   implicit val instantCoder: Coder[Instant] = InstantCoder.of()
 
+  implicit def iterableCoder[T](implicit t: Coder[T]): Coder[java.lang.Iterable[T]] = IterableCoder.of(t)
+
   implicit def serializableCoder[T <: Serializable](implicit tag: TypeTag[T]): Coder[T] = {
     val clazz = tag.mirror.runtimeClass(tag.tpe.dealias).asInstanceOf[Class[T]]
     SerializableCoder.of(clazz)
