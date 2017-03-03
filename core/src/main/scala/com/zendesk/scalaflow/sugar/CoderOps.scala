@@ -27,8 +27,6 @@ trait CoderOps {
 
   implicit def eitherCoder[A, B](implicit a: Coder[A], b: Coder[B]): Coder[Either[A, B]] = EitherCoder.of(a, b)
 
-  implicit def tuple2Coder[A, B](implicit a: Coder[A], b: Coder[B]): Coder[(A, B)] = Tuple2Coder.of(a, b)
-
   implicit def kvCoder[A, B](implicit a: Coder[A], b: Coder[B]): Coder[KV[A, B]] = KvCoder.of(a, b)
 
   implicit val instantCoder: Coder[Instant] = InstantCoder.of()

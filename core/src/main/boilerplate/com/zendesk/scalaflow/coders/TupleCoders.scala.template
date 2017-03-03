@@ -10,12 +10,15 @@ import com.google.cloud.dataflow.sdk.util.PropertyNames.COMPONENT_ENCODINGS
 
 import scala.collection.JavaConverters._
 
-object TupleCoders {
-  def register(coderRegistry: CoderRegistry ) = {
-    [2..22#coderRegistry.registerCoder(classOf[Tuple1[[#_#]]], classOf[Tuple1Coder[[#_#]]])#
-    ]
+trait TupleCoders {
+  [2..22#implicit def tuple1Coder[[#V1#]](implicit [#coder1: Coder[V1]#]): Tuple1Coder[[#V1#]] = {
+    new Tuple1Coder([#coder1#])
   }
+  #
+  ]
 }
+
+object TupleCoders extends TupleCoders
 
 
 

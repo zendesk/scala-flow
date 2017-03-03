@@ -1,8 +1,10 @@
 package com.zendesk
 
+import com.zendesk.scalaflow.coders.TupleCoders
 import com.zendesk.scalaflow.sugar._
 
 package object scalaflow extends CaseClassOps
+  with TupleCoders
   with CoderOps
   with CollectionOps
   with DurationOps
