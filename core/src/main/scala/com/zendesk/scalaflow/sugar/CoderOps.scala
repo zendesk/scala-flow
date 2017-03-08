@@ -35,12 +35,18 @@ trait CoderOps {
 
   implicit def javaSetCoder[T](implicit t: Coder[T]): Coder[java.util.Set[T]] = JavaSetCoder.of(t)
 
+  implicit def javaMapCoder[K, V](implicit k: Coder[K], v: Coder[V]): Coder[java.util.Map[K, V]] = MapCoder.of(k, v)
+
   implicit def listCoder[T](implicit t: Coder[T]): Coder[List[T]] = {
     delegateCoder[List[T], java.util.List[T]](_.asJava, _.asScala.toList)
   }
 
   implicit def setCoder[T](implicit t: Coder[T]): Coder[Set[T]] = {
-    delegateCoder[Set[T], java.util.Set[T]](_.asJava, javaSet => Set(javaSet.asScala.toList: _*))
+    delegateCoder[Set[T], java.util.Set[T]](_.asJava, javaSet => javaSet.asScala.toSet)
+  }
+
+  implicit def mapCoder[K, V](implicit k: Coder[K], v: Coder[V]): Coder[Map[K, V]] = {
+    delegateCoder[Map[K, V], java.util.Map[K, V]](_.asJava, x => x.asScala.toMap)
   }
 
   implicit def optionCoder[T](implicit t: Coder[T]): Coder[Option[T]] = OptionCoder.of(t)
