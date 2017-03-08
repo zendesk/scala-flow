@@ -1,16 +1,13 @@
 package com.zendesk.scalaflow.coders
 
 import java.io.{InputStream, OutputStream}
+import java.util.{List => JList}
 
-import com.fasterxml.jackson.annotation.{JsonCreator, JsonProperty}
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
-import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, StandardCoder}
-import com.google.cloud.dataflow.sdk.util.PropertyNames
+import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, CustomCoder}
 import com.google.cloud.dataflow.sdk.util.common.ElementByteSizeObserver
 
-import scala.collection.JavaConverters._
-
-case class OptionCoder[T](valueCoder: Coder[T]) extends StandardCoder[Option[T]] {
+class OptionCoder[T](valueCoder: Coder[T]) extends CustomCoder[Option[T]] {
   private val byteCoder = ByteCoder.of
 
   override def encode(value: Option[T], outStream: OutputStream, context: Context): Unit = {
@@ -40,7 +37,7 @@ case class OptionCoder[T](valueCoder: Coder[T]) extends StandardCoder[Option[T]]
     valueCoder.consistentWithEquals
   }
 
-  override def getCoderArguments: java.util.List[_ <: Coder[_]] = {
+  override def getCoderArguments: JList[Coder[_]] = {
     java.util.Arrays.asList(valueCoder)
   }
 
@@ -66,22 +63,4 @@ case class OptionCoder[T](valueCoder: Coder[T]) extends StandardCoder[Option[T]]
   }
 
   override def getEncodingId = "OptionCoder"
-}
-
-object OptionCoder {
-  def of[T](valueCoder: Coder[T]): OptionCoder[T] = {
-    new OptionCoder(valueCoder)
-  }
-
-  @JsonCreator
-  def of(@JsonProperty(PropertyNames.COMPONENT_ENCODINGS) components: java.util.List[Coder[_]]): OptionCoder[_] = {
-    of(components.get(0))
-  }
-
-  def getInstanceComponents[T](value: Option[T]): java.util.List[java.lang.Object] = {
-    value match {
-      case Some(v) => Seq(v.asInstanceOf[AnyRef]).toList.asJava
-      case None => Seq().toList.asJava
-    }
-  }
 }

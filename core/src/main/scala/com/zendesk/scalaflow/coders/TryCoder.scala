@@ -1,18 +1,15 @@
 package com.zendesk.scalaflow.coders
 
 import java.io.{InputStream, OutputStream}
-import java.util
+import java.util.{List => JList}
 
-import com.fasterxml.jackson.annotation.{JsonCreator, JsonProperty}
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
-import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, SerializableCoder, StandardCoder}
-import com.google.cloud.dataflow.sdk.util.PropertyNames
+import com.google.cloud.dataflow.sdk.coders._
 import com.google.cloud.dataflow.sdk.util.common.ElementByteSizeObserver
 
-import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
-case class TryCoder[A](coder: Coder[A]) extends StandardCoder[Try[A]] {
+class TryCoder[A](coder: Coder[A]) extends CustomCoder[Try[A]] {
   private val byteCoder = ByteCoder.of
   private val errorCoder = SerializableCoder.of(classOf[Throwable])
 
@@ -44,7 +41,7 @@ case class TryCoder[A](coder: Coder[A]) extends StandardCoder[Try[A]] {
     errorCoder.consistentWithEquals && coder.consistentWithEquals
   }
 
-  override def getCoderArguments: util.List[_ <: Coder[_]] = {
+  override def getCoderArguments: JList[Coder[_]] = {
     java.util.Arrays.asList(coder)
   }
 
@@ -79,22 +76,3 @@ case class TryCoder[A](coder: Coder[A]) extends StandardCoder[Try[A]] {
 
   override def getEncodingId = "TryCoder"
 }
-
-object TryCoder {
-  def of[A](coder: Coder[A]): TryCoder[A] = {
-    new TryCoder(coder)
-  }
-
-  @JsonCreator
-  def of(@JsonProperty(PropertyNames.COMPONENT_ENCODINGS) components: java.util.List[Coder[_]]): TryCoder[_] = {
-    of(components.get(0))
-  }
-
-  def getInstanceComponents[A](value: Try[A]): java.util.List[java.lang.Object] = {
-    value match {
-      case Failure(failure) => Seq(failure.asInstanceOf[AnyRef]).toList.asJava
-      case Success(success) => Seq(success.asInstanceOf[AnyRef]).toList.asJava
-    }
-  }
-}
-
