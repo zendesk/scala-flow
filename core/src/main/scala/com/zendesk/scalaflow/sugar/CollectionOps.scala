@@ -5,18 +5,17 @@ import com.google.cloud.dataflow.sdk.values.{KV, PCollection, PCollectionList, P
 import org.joda.time.Instant
 
 import scala.collection.JavaConverters._
-import scala.reflect.runtime.universe._
-
 import WrapperOps._
+import com.google.cloud.dataflow.sdk.coders.Coder
 
 trait CollectionOps {
 
-  implicit class RichCollection[A: TypeTag](val collection: PCollection[A]) {
-    def parDo[B: TypeTag](f: DoFn[A, B]#ProcessContext => Unit): PCollection[B] = {
-      collection.apply(asParDo(f))
+  implicit class RichCollection[A: Coder](val collection: PCollection[A]) {
+    def parDo[B](f: DoFn[A, B]#ProcessContext => Unit)(implicit coder: Coder[B]): PCollection[B] = {
+      collection.apply(asParDo(f)).setCoder(coder)
     }
 
-    def map[B: TypeTag](f: A => B): PCollection[B] = parDo {
+    def map[B : Coder](f: A => B): PCollection[B] = parDo {
       c => c.output(f(c.element))
     }
 
@@ -24,15 +23,15 @@ trait CollectionOps {
       c => if (f(c.element)) c.output(c.element)
     }
 
-    def collect[B: TypeTag](pf: PartialFunction[A, B]): PCollection[B] = parDo {
+    def collect[B : Coder](pf: PartialFunction[A, B]): PCollection[B] = parDo {
       c => if (pf.isDefinedAt(c.element)) c.output(pf(c.element))
     }
 
-    def extractTimestamp: PCollection[(A, Instant)] = parDo {
+    def extractTimestamp(implicit c: Coder[(A, Instant)]): PCollection[(A, Instant)] = parDo {
       c => c.output((c.element, c.timestamp))
     }
 
-    def flatMap[B: TypeTag](f: A => Iterable[B]): PCollection[B] = parDo {
+    def flatMap[B : Coder](f: A => Iterable[B]): PCollection[B] = parDo {
       c => f(c.element).foreach(c.output)
     }
 
@@ -40,7 +39,7 @@ trait CollectionOps {
       c => { f(c.element); c.output(c.element) }
     }
 
-    def withKey[B: TypeTag](f: A => B): PCollection[KV[B, A]] = parDo {
+    def withKey[B : Coder](f: A => B)(implicit c: Coder[KV[B, A]]): PCollection[KV[B, A]] = parDo {
       c => c.output(KV.of(f(c.element), c.element))
     }
 

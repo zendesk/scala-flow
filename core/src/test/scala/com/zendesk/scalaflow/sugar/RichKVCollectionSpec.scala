@@ -1,18 +1,14 @@
 package com.zendesk.scalaflow.sugar
 
-import com.google.cloud.dataflow.sdk.coders.VarIntCoder
 import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{KV, PCollection}
-import com.zendesk.scalaflow.coders.{ListCoder, SetCoder}
+import com.zendesk.scalaflow._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
-
-import CollectionOps._
-import KVCollectionOps._
 
 class RichKVCollectionSpec extends FlatSpec with Matchers {
 
@@ -54,10 +50,6 @@ class RichKVCollectionSpec extends FlatSpec with Matchers {
     val pipelineOptions = TestPipeline.testingPipelineOptions
     pipelineOptions.setStableUniqueNames(OFF)
 
-    val pipeline = TestPipeline.fromOptions(pipelineOptions)
-    pipeline.getCoderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
-    pipeline.getCoderRegistry.registerCoder(classOf[List[_]], classOf[ListCoder[_]])
-    pipeline.getCoderRegistry.registerCoder(classOf[Set[_]], classOf[SetCoder[_]])
-    pipeline
+    TestPipeline.fromOptions(pipelineOptions)
   }
 }

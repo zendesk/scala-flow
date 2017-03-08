@@ -2,47 +2,14 @@ package com.zendesk.scalaflow.sugar
 
 import com.google.cloud.bigtable.dataflow.CloudBigtableIO
 import com.google.cloud.dataflow.sdk.Pipeline
-import com.google.cloud.dataflow.sdk.coders.{Coder, CoderFactory, DoubleCoder, VarIntCoder, VarLongCoder}
+import com.google.cloud.dataflow.sdk.coders.Coder
+import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{PBegin, PCollection, POutput}
-import com.zendesk.scalaflow.coders._
-
-import scala.util.Try
-import scala.reflect.runtime.universe._
-import WrapperOps._
+import com.zendesk.scalaflow.sugar.WrapperOps._
 
 trait PipelineOps {
 
   implicit class RichPipeline(pipeline: Pipeline) {
-    val coderRegistry = pipeline.getCoderRegistry()
-
-    def registerScalaCoders(): Pipeline = {
-      coderRegistry.registerCoder(classOf[Int], classOf[VarIntCoder])
-      coderRegistry.registerCoder(classOf[Long], classOf[VarLongCoder])
-      coderRegistry.registerCoder(classOf[Double], classOf[DoubleCoder])
-      coderRegistry.registerCoder(classOf[List[_]], classOf[ListCoder[_]])
-      coderRegistry.registerCoder(classOf[Set[_]], classOf[SetCoder[_]])
-      coderRegistry.registerCoder(classOf[Option[_]], classOf[OptionCoder[_]])
-      coderRegistry.registerCoder(classOf[Try[_]], classOf[TryCoder[_]])
-      coderRegistry.registerCoder(classOf[Either[_, _]], classOf[EitherCoder[_, _]])
-      TupleCoders.register(coderRegistry)
-      pipeline
-    }
-
-    def registerCoder(clazz: Class[_], coderClazz: Class[_]): Pipeline = {
-      coderRegistry.registerCoder(clazz, coderClazz)
-      pipeline
-    }
-
-    def registerCoder(clazz: Class[_], coderFactory: CoderFactory): Pipeline = {
-      coderRegistry.registerCoder(clazz, coderFactory)
-      pipeline
-    }
-
-    def registerCoder[T](rawClazz: Class[T], coder: Coder[T]): Pipeline = {
-      coderRegistry.registerCoder(rawClazz, coder)
-      pipeline
-    }
-
     def initializeForBigTableWrite(): Pipeline = {
       CloudBigtableIO.initializeForWrite(pipeline)
       pipeline
@@ -52,11 +19,15 @@ trait PipelineOps {
   implicit class RichBegin(begin: PBegin) {
     import CollectionOps.RichCollection
 
+    def transform[T](values: Create.Values[T])(implicit coder: Coder[T]): PCollection[T] = {
+      begin.apply(values.withCoder(coder))
+    }
+
     def transformWith[A <: POutput](name: String)(f: PBegin => A) = {
       begin.apply(name, asPTransform(f))
     }
 
-    def flatten[A: TypeTag](first: PCollection[A], second: PCollection[A], others: PCollection[A]*): PCollection[A] = {
+    def flatten[A : Coder](first: PCollection[A], second: PCollection[A], others: PCollection[A]*): PCollection[A] = {
       first.flattenWith(second, others: _*)
     }
   }
