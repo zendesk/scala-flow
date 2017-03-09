@@ -3,7 +3,7 @@ package com.zendesk.scalaflow.sugar
 import java.lang.{Iterable => JIterable}
 
 import com.google.cloud.dataflow.sdk.coders.{Coder, IterableCoder}
-import com.google.cloud.dataflow.sdk.transforms.{Combine, DoFn, GroupByKey}
+import com.google.cloud.dataflow.sdk.transforms.{Combine, DoFn, GroupByKey, Top}
 import com.google.cloud.dataflow.sdk.values.{KV, PCollection}
 import com.zendesk.scalaflow._
 import org.joda.time.Instant
@@ -26,18 +26,21 @@ trait KVCollectionOps {
       c => f(c.element.getValue).foreach { value => c.output(KV.of(c.element.getKey, value)) }
     }
 
+    def extractTimestamp: PCollection[KV[K, (A, Instant)]] = parDo {
+      c => c.output(KV.of(c.element.getKey, (c.element.getValue, c.timestamp)))
+    }
+
     def combinePerKey(zero: A)(f: (A, A) => A): PCollection[KV[K, A]] = {
       val g = (input: JIterable[A]) => input.asScala.fold(zero)(f)
       collection.apply(Combine.perKey[K, A](asSimpleFn(g)))
     }
 
     def groupByKey: PCollection[KV[K, Iterable[A]]] = {
-      implicit val intermediateCoder = IterableCoder.of(implicitly[Coder[A]])
       collection.apply(GroupByKey.create[K, A]).mapValue(_.asScala)
     }
 
-    def extractTimestamp: PCollection[KV[K, (A, Instant)]] = parDo {
-      c => c.output(KV.of(c.element.getKey, (c.element.getValue, c.timestamp)))
+    def topPerKey(count: Int)(implicit ordered: Ordering[A]): PCollection[KV[K, List[A]]] = {
+      collection.apply(Top.perKey(count, ordered)).mapValue(_.asScala.toList)
     }
   }
 }
