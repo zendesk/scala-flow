@@ -1,0 +1,17 @@
+package com.zendesk.scalaflow.sugar
+
+import com.google.cloud.dataflow.sdk.coders.Coder
+
+import com.zendesk.scalaflow.coders._
+
+
+trait TupleOps {
+
+  [2..22#implicit def tuple1Coder[[#V1#]](implicit [#coder1: Coder[V1]#]): Coder[Tuple1[[#V1#]]] = {
+    new Tuple1Coder[[#V1#]]()
+  }
+  #
+  ]
+}
+
+object TupleOps extends TupleOps

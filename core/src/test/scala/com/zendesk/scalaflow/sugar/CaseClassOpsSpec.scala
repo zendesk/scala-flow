@@ -6,7 +6,7 @@ import com.google.cloud.dataflow.sdk.transforms.Create
 
 import org.scalatest.{FlatSpec, Matchers}
 
-import CaseClassOps._
+import com.zendesk.scalaflow._
 
 object CaseClassOpsSpec {
   case class Foo()
@@ -21,9 +21,11 @@ class CaseClassOpsSpec extends FlatSpec with Matchers {
   behavior of "CaseClassCoders"
 
   it should "handle zero member case class" in {
-    val pipeline = testPipeline().registerCaseClass(Foo)
-    val output = pipeline
-      .apply(Create.of(Foo()))
+    implicit val fooCoder = caseClassCoder(Foo)
+
+    val pipeline = testPipeline()
+    val output = pipeline.begin
+      .transform(Create.of(Foo()))
       .map(identity)
 
     DataflowAssert.that(output).containsInAnyOrder(Foo())
@@ -31,9 +33,11 @@ class CaseClassOpsSpec extends FlatSpec with Matchers {
   }
 
   it should "handle single member case class" in {
-    val pipeline = testPipeline().registerCaseClass(Bar)
-    val output = pipeline
-      .apply(Create.of(Bar("Fred")))
+    implicit val barCoder = caseClassCoder(Bar)
+
+    val pipeline = testPipeline()
+    val output = pipeline.begin
+      .transform(Create.of(Bar("Fred")))
       .map(_.copy(name = "John"))
 
     DataflowAssert.that(output).containsInAnyOrder(Bar("John"))
@@ -41,9 +45,11 @@ class CaseClassOpsSpec extends FlatSpec with Matchers {
   }
 
   it should "handle double member case classes" in {
-    val pipeline = testPipeline().registerCaseClass(Qux)
-    val output = pipeline
-      .apply(Create.of(Qux("Fred", 27)))
+    implicit val quxCoder = caseClassCoder(Qux)
+
+    val pipeline = testPipeline()
+    val output = pipeline.begin
+      .transform(Create.of(Qux("Fred", 27)))
       .map(_.copy(age = 35))
 
     DataflowAssert.that(output).containsInAnyOrder(Qux("Fred", 35))
@@ -51,14 +57,14 @@ class CaseClassOpsSpec extends FlatSpec with Matchers {
   }
 
   it should "handle nested case classes" in {
-    val pipeline = testPipeline()
-      .registerCaseClass(Foo)
-      .registerCaseClass(Bar)
-      .registerCaseClass(Qux)
-      .registerCaseClass(Wibble)
+    implicit val fooCoder = caseClassCoder(Foo)
+    implicit val barCoder = caseClassCoder(Bar)
+    implicit val quxCoder = caseClassCoder(Qux)
+    implicit val wibbleCoder = caseClassCoder(Wibble)
 
-    val output = pipeline
-      .apply(Create.of(Wibble(Foo(), Bar("John"), Qux("Fred", 27))))
+    val pipeline = testPipeline()
+    val output = pipeline.begin
+      .transform(Create.of(Wibble(Foo(), Bar("John"), Qux("Fred", 27))))
       .map(_.copy(qux = Qux("Fred", 35)))
 
     DataflowAssert.that(output).containsInAnyOrder(Wibble(Foo(), Bar("John"), Qux("Fred", 35)))

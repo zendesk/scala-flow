@@ -1,18 +1,15 @@
 package com.zendesk.scalaflow.coders
 
 import java.io.{InputStream, OutputStream}
-import java.util
+import java.util.{List => JList}
 
-import com.fasterxml.jackson.annotation.{JsonCreator, JsonProperty}
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
-import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, StandardCoder}
+import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, CustomCoder}
 import com.google.cloud.dataflow.sdk.util.Structs.addBoolean
 import com.google.cloud.dataflow.sdk.util.common.ElementByteSizeObserver
 import com.google.cloud.dataflow.sdk.util.{CloudObject, PropertyNames}
 
-import scala.collection.JavaConverters._
-
-case class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends StandardCoder[Either[A, B]] {
+class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends CustomCoder[Either[A, B]] {
   private val byteCoder = ByteCoder.of
 
   override def encode(value: Either[A, B], outStream: OutputStream, context: Context): Unit = {
@@ -39,14 +36,11 @@ case class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends Standar
       Right(bCoder.decode(inStream, nestedContext))
   }
 
-  def getCoder1(): Coder[A] = aCoder
-  def getCoder2(): Coder[B] = bCoder
-
   override def consistentWithEquals(): Boolean = {
     aCoder.consistentWithEquals && bCoder.consistentWithEquals
   }
 
-  override def getCoderArguments: util.List[_ <: Coder[_]] = {
+  override def getCoderArguments: JList[Coder[_]] = {
     java.util.Arrays.asList(aCoder, bCoder)
   }
 
@@ -87,22 +81,3 @@ case class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends Standar
 
   override def getEncodingId = "EitherCoder"
 }
-
-object EitherCoder {
-  def of[A, B](a: Coder[A], b: Coder[B]): EitherCoder[A, B] = {
-    new EitherCoder(a, b)
-  }
-
-  @JsonCreator
-  def of(@JsonProperty(PropertyNames.COMPONENT_ENCODINGS) components: java.util.List[Coder[_]]): EitherCoder[_, _] = {
-    of(components.get(0), components.get(1))
-  }
-
-  def getInstanceComponents[A, B](value: Either[A, B]): java.util.List[java.lang.Object] = {
-    value match {
-      case Left(left) => Seq(left.asInstanceOf[AnyRef]).toList.asJava
-      case Right(right) => Seq(right.asInstanceOf[AnyRef]).toList.asJava
-    }
-  }
-}
-
