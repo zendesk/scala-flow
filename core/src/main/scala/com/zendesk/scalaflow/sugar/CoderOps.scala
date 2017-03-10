@@ -66,7 +66,7 @@ trait CoderOps {
     DelegateCoder.of[Array[T], JList[T]](javaListCoder, _.toList.asJava, _.asScala.toArray)
   }
 
-  // Opt-in convienience catch-all coder for anything that doesn't fit in above and is not a case class
+  // Opt-in convenience catch-all coder for anything that doesn't fit in above and is not a case class
   def serializableCoder[T <: Serializable](implicit tag: ClassTag[T]): Coder[T] = {
     SerializableCoder.of(tag.runtimeClass.asInstanceOf[Class[T]])
   }
