@@ -1,11 +1,11 @@
 lazy val commonSettings = Seq(
   organization := "com.zendesk",
-  version := "0.1.0-SNAPSHOT",
+  version := "0.1.0",
   
   scalaVersion := "2.12.1",
   scalacOptions ++= Seq("-feature"),
 
-  publishTo := Some("Artifactory" at sys.env.getOrElse("ARTIFACTORY_URL", "-") + new java.util.Date().getTime),
+  publishTo := Some("Artifactory" at sys.env.getOrElse("ARTIFACTORY_URL", "-")),
   credentials += Credentials(
     sys.env.getOrElse("ARTIFACTORY_REALM", "-"),
     sys.env.getOrElse("ARTIFACTORY_HOST", "-"),
