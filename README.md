@@ -1,6 +1,6 @@
 # scala-flow
 
-_scala-flow_ is a lightweight library intended to make developing Google DataFlow jobs in Scala easier. The "Pimp My Library" pattern is applied extensively to allow more idiomatic and concise Scala usage while preserving full access to the underlying Java SDK.
+_scala-flow_ is a lightweight library intended to make developing Google DataFlow jobs in Scala easier. The core dataflow classes are enriched to allow more idiomatic and concise Scala usage while preserving full access to the underlying Java SDK.
     
 Coders for Scala primitives and core classes have been implemented so that you can conveniently return these types from your PTransforms.
 
