@@ -14,7 +14,9 @@ class JoinOpsSpec extends FlatSpec with Matchers {
     val input1 = pipeline.apply(Create.of(KV.of("x", 1), KV.of("y", 2), KV.of("x", 3)))
     val input2 = pipeline.apply(Create.of(KV.of("y", "yo"), KV.of("x", "lo")))
 
-    val output = input1.coGroupByKey(input2)
+    val output = input1
+      .coGroupByKey(input2)
+      .mapValue { case (x, y) => (x.toSet, y.toSet) } // avoid ordering problems
 
     DataflowAssert.that(output).containsInAnyOrder(
       KV.of("x", (Set(1, 3), Set("lo"))),
