@@ -62,6 +62,18 @@ Simple example that puts it all together:
     .run()
 ```
 
+#### Joining PCollections
+
+In order to join two or more collections of `KV` values by key you can use `coGroupByKey`, a type-safe wrapper around Dataflow's [`CoGroupByKey`](https://cloud.google.com/dataflow/java-sdk/JavaDoc/com/google/cloud/dataflow/sdk/transforms/join/CoGroupByKey) transform.
+
+```scala
+val buyOrders: PCollection[KV[CustomerId, BuyOrder]] = ...
+val sellOrders: PCollection[KV[CustomerId, SellOrder]] = ...
+
+val allOrders: PCollection[KV[CustomerId, (Iterable[BuyOrder], Iterable[SellOrder])]] =
+  buyOrders.coGroupByKey(sellOrders)
+```
+
 #### Logging Side effect
 
 A side-effecting method `foreach` has been added to allow handy debug logging. This method applies it's argument to each element of the `PCollection` then passes it on unchanged.

@@ -1,0 +1,54 @@
+package com.zendesk.scalaflow.sugar
+
+import com.google.cloud.dataflow.sdk.coders.Coder
+import com.google.cloud.dataflow.sdk.transforms.join.{CoGbkResult, CoGroupByKey, KeyedPCollectionTuple}
+import com.google.cloud.dataflow.sdk.transforms.{DoFn, ParDo}
+import com.google.cloud.dataflow.sdk.values.{KV, PCollection, TupleTag}
+
+import scala.collection.JavaConverters._
+
+import CoderOps._
+import TupleOps._
+
+trait JoinOps {
+
+  implicit class JoinPCollection[K : Coder, V1 : Coder](coll1: PCollection[KV[K, V1]]) {
+
+    [2..21#def coGroupByKey[[2..#V1 : Coder#]]([2..#coll1: PCollection[KV[K, V1]]#]): PCollection[KV[K, ([#Iterable[V1]#])]] = {
+      [#val tag1 = new TupleTag[V1]()#
+      ]
+
+      val tuple = KeyedPCollectionTuple
+        .of(tag##1, coll##1)
+        [2..#.and(tag1, coll1)#
+        ]
+
+      val doFn = new DoFn[KV[K, CoGbkResult], KV[K, ([#Iterable[V1]#])]] {
+        override def processElement(c: DoFn[KV[K, CoGbkResult], KV[K, ([#Iterable[V1]#])]]\#ProcessContext) = {
+          val key = c.element().getKey
+          val coGbkResult = c.element().getValue
+
+          [#val values1 = coGbkResult.getAll(tag1).asScala#
+          ]
+
+          val result = KV.of(key, ([#values1#]))
+
+          c.output(result)
+        }
+      }
+
+      val coder = implicitly[Coder[KV[K, ([#Iterable[V1]#])]]]
+
+      tuple
+        .apply(CoGroupByKey.create[K])
+        .apply(ParDo.of(doFn))
+        .setCoder(coder)
+    }#
+
+    ]
+
+  }
+}
+
+object JoinOps extends JoinOps
+
