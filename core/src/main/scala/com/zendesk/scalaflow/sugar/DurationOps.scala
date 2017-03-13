@@ -1,22 +1,12 @@
 package com.zendesk.scalaflow.sugar
 
-import org.joda.time.Duration
+import java.time.{Duration => JavaDuration}
+import org.joda.time.{Duration => JodaDuration}
+import scala.concurrent.duration.{Duration => ScalaDuration}
 
 trait DurationOps {
-
-  implicit class IntWithTimeMethods(int: Int) {
-    def second = Duration.standardSeconds(int)
-    def seconds = Duration.standardSeconds(int)
-
-    def minute = Duration.standardMinutes(int)
-    def minutes = Duration.standardMinutes(int)
-
-    def hour = Duration.standardHours(int)
-    def hours = Duration.standardHours(int)
-
-    def day = Duration.standardDays(int)
-    def days = Duration.standardDays(int)
-  }
+  implicit def java2joda(javaDuration: JavaDuration) = JodaDuration.millis(javaDuration.toMillis)
+  implicit def scala2joda(scalaDuration: ScalaDuration) = JodaDuration.millis(scalaDuration.toMillis)
 }
 
 object DurationOps extends DurationOps

@@ -6,8 +6,6 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 
   "com.google.cloud.dataflow" % "google-cloud-dataflow-java-sdk-all" % "1.9.0",
-  "com.google.cloud.bigtable" % "bigtable-hbase-dataflow" % "0.9.5",
-  "io.netty" % "netty-tcnative-boringssl-static" % "1.1.33.Fork19",
 
   "org.scalatest" %% "scalatest" % "3.0.1" % Test,
   "ch.qos.logback" % "logback-classic" % "1.2.1" % Test,

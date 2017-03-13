@@ -1,7 +1,5 @@
 package com.zendesk.scalaflow.sugar
 
-import com.google.cloud.bigtable.dataflow.CloudBigtableIO
-import com.google.cloud.dataflow.sdk.Pipeline
 import com.google.cloud.dataflow.sdk.coders.Coder
 import com.google.cloud.dataflow.sdk.transforms.Create
 import com.google.cloud.dataflow.sdk.values.{PBegin, PCollection, POutput}
@@ -9,13 +7,6 @@ import com.zendesk.scalaflow.sugar.CollectionOps.RichCollection
 import com.zendesk.scalaflow.sugar.WrapperOps._
 
 trait PipelineOps {
-
-  implicit class RichPipeline(pipeline: Pipeline) {
-    def initializeForBigTableWrite(): Pipeline = {
-      CloudBigtableIO.initializeForWrite(pipeline)
-      pipeline
-    }
-  }
 
   implicit class RichBegin(begin: PBegin) {
 
