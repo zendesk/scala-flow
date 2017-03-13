@@ -1,39 +1,31 @@
 package com.zendesk.scalaflow.coders
 
-import java.io.{InputStream, OutputStream}
-import java.util.{List => JList}
+import java.io.{IOException, InputStream, OutputStream}
+import java.util.{Arrays, List => JList}
 
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
-import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, CustomCoder}
-import com.google.cloud.dataflow.sdk.util.Structs.addBoolean
+import com.google.cloud.dataflow.sdk.coders.{Coder, CustomCoder}
 import com.google.cloud.dataflow.sdk.util.common.ElementByteSizeObserver
-import com.google.cloud.dataflow.sdk.util.{CloudObject, PropertyNames}
 
 class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends CustomCoder[Either[A, B]] {
-  private val byteCoder = ByteCoder.of
 
   override def encode(value: Either[A, B], outStream: OutputStream, context: Context): Unit = {
-    val nestedContext = context.nested
-
     value match {
       case Left(left) =>
-        byteCoder.encode(1.toByte, outStream, nestedContext)
-        aCoder.encode(left, outStream, nestedContext)
+        outStream.write(1)
+        aCoder.encode(left, outStream, context.nested)
       case Right(right) =>
-        byteCoder.encode(0.toByte, outStream, nestedContext)
-        bCoder.encode(right, outStream, nestedContext)
+        outStream.write(0)
+        bCoder.encode(right, outStream, context.nested)
     }
   }
 
   override def decode(inStream: InputStream, context: Context): Either[A, B] = {
-    val nestedContext = context.nested
+    val tag = inStream.read
 
-    val tag = byteCoder.decode(inStream, nestedContext)
-
-    if (tag == 1.toByte)
-      Left(aCoder.decode(inStream, nestedContext))
-    else
-      Right(bCoder.decode(inStream, nestedContext))
+    if (tag == 1) Left(aCoder.decode(inStream, context.nested))
+    else if (tag == 0) Right(bCoder.decode(inStream, context.nested))
+    else throw new IOException(s"Unexpected value $tag encountered decoding 1 byte from input stream")
   }
 
   override def consistentWithEquals(): Boolean = {
@@ -41,7 +33,7 @@ class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends CustomCoder[
   }
 
   override def getCoderArguments: JList[Coder[_]] = {
-    java.util.Arrays.asList(aCoder, bCoder)
+    Arrays.asList(aCoder, bCoder)
   }
 
   override def verifyDeterministic(): Unit = {
@@ -73,11 +65,5 @@ class EitherCoder[A, B](aCoder: Coder[A], bCoder: Coder[B]) extends CustomCoder[
     }
   }
 
-  override def asCloudObject(): CloudObject = {
-    val result = super.asCloudObject
-    addBoolean(result, PropertyNames.IS_PAIR_LIKE, true)
-    result
-  }
-
-  override def getEncodingId = "EitherCoder"
+  override def getEncodingId = s"EitherCoder(${aCoder.getEncodingId},${bCoder.getEncodingId})"
 }

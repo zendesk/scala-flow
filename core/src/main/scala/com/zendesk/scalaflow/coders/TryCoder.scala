@@ -1,7 +1,7 @@
 package com.zendesk.scalaflow.coders
 
-import java.io.{InputStream, OutputStream}
-import java.util.{List => JList}
+import java.io.{IOException, InputStream, OutputStream}
+import java.util.{Arrays, List => JList}
 
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
 import com.google.cloud.dataflow.sdk.coders._
@@ -10,44 +10,34 @@ import com.google.cloud.dataflow.sdk.util.common.ElementByteSizeObserver
 import scala.util.{Failure, Success, Try}
 
 class TryCoder[A](coder: Coder[A]) extends CustomCoder[Try[A]] {
-  private val byteCoder = ByteCoder.of
+
   private val errorCoder = SerializableCoder.of(classOf[Throwable])
 
   override def encode(value: Try[A], outStream: OutputStream, context: Context): Unit = {
-    val nestedContext = context.nested
-
     value match {
       case Failure(failure) =>
-        byteCoder.encode(1.toByte, outStream, nestedContext)
-        errorCoder.encode(failure, outStream, nestedContext)
+        outStream.write(1)
+        errorCoder.encode(failure, outStream, context.nested)
       case Success(success) =>
-        byteCoder.encode(0.toByte, outStream, nestedContext)
-        coder.encode(success, outStream, nestedContext)
+        outStream.write(0)
+        coder.encode(success, outStream, context.nested)
     }
   }
 
   override def decode(inStream: InputStream, context: Context): Try[A] = {
-    val nestedContext = context.nested
+    val tag = inStream.read()
 
-    val tag = byteCoder.decode(inStream, nestedContext)
-
-    if (tag == 1.toByte)
-      Failure(errorCoder.decode(inStream, nestedContext))
-    else
-      Success(coder.decode(inStream, nestedContext))
+    if (tag == 1) Failure(errorCoder.decode(inStream, context.nested))
+    else if (tag == 0) Success(coder.decode(inStream, context.nested))
+    else throw new IOException(s"Unexpected value $tag encountered decoding 1 byte from input stream")
   }
 
-  override def consistentWithEquals(): Boolean = {
-    errorCoder.consistentWithEquals && coder.consistentWithEquals
-  }
+  override def consistentWithEquals(): Boolean = false
 
-  override def getCoderArguments: JList[Coder[_]] = {
-    java.util.Arrays.asList(coder)
-  }
+  override def getCoderArguments: JList[Coder[_]] = Arrays.asList(coder)
 
   override def verifyDeterministic(): Unit = {
-    verifyDeterministic("Error coder must be deterministic", errorCoder)
-    verifyDeterministic("Coder must be deterministic", coder)
+    throw new Coder.NonDeterministicException(this, "Java Serialization may be non-deterministic.")
   }
 
   override def registerByteSizeObserver(value: Try[A], observer: ElementByteSizeObserver, context: Context): Unit = {
@@ -74,5 +64,5 @@ class TryCoder[A](coder: Coder[A]) extends CustomCoder[Try[A]] {
     }
   }
 
-  override def getEncodingId = "TryCoder"
+  override def getEncodingId = s"TryCoder(${coder.getEncodingId})"
 }

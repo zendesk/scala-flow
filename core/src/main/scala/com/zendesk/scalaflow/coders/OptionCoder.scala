@@ -1,7 +1,7 @@
 package com.zendesk.scalaflow.coders
 
-import java.io.{InputStream, OutputStream}
-import java.util.{List => JList}
+import java.io.{IOException, InputStream, OutputStream}
+import java.util.{Arrays, List => JList}
 
 import com.google.cloud.dataflow.sdk.coders.Coder.Context
 import com.google.cloud.dataflow.sdk.coders.{ByteCoder, Coder, CustomCoder}
@@ -11,26 +11,21 @@ class OptionCoder[T](valueCoder: Coder[T]) extends CustomCoder[Option[T]] {
   private val byteCoder = ByteCoder.of
 
   override def encode(value: Option[T], outStream: OutputStream, context: Context): Unit = {
-    val nestedContext = context.nested
-
     value match {
       case Some(left) =>
-        byteCoder.encode(1.toByte, outStream, nestedContext)
-        valueCoder.encode(left, outStream, nestedContext)
+        outStream.write(1)
+        valueCoder.encode(left, outStream, context.nested)
       case None =>
-        byteCoder.encode(0.toByte, outStream, nestedContext)
+        outStream.write(0)
     }
   }
 
   override def decode(inStream: InputStream, context: Context): Option[T] = {
-    val nestedContext = context.nested
+    val tag = inStream.read()
 
-    val tag = byteCoder.decode(inStream, nestedContext)
-
-    if (tag == 1.toByte)
-      Some(valueCoder.decode(inStream, nestedContext))
-    else
-      None
+    if (tag == 1) Some(valueCoder.decode(inStream, context.nested))
+    else if (tag == 0) None
+    else throw new IOException(s"Unexpected value $tag encountered decoding 1 byte from input stream")
   }
 
   override def consistentWithEquals(): Boolean = {
@@ -38,7 +33,7 @@ class OptionCoder[T](valueCoder: Coder[T]) extends CustomCoder[Option[T]] {
   }
 
   override def getCoderArguments: JList[Coder[_]] = {
-    java.util.Arrays.asList(valueCoder)
+    Arrays.asList(valueCoder)
   }
 
   override def verifyDeterministic(): Unit = {
@@ -62,5 +57,5 @@ class OptionCoder[T](valueCoder: Coder[T]) extends CustomCoder[Option[T]] {
       .getOrElse(true)
   }
 
-  override def getEncodingId = "OptionCoder"
+  override def getEncodingId = s"OptionCoder(${valueCoder.getEncodingId})"
 }
