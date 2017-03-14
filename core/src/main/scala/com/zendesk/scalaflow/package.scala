@@ -9,5 +9,6 @@ package object scalaflow extends CoderOps
   with DurationOps
   with KVCollectionOps
   with JoinOps
+  with BranchOps
   with PipelineOps
   with WrapperOps
