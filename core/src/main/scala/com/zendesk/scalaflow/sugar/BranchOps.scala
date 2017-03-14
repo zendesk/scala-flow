@@ -4,6 +4,8 @@ import com.google.cloud.dataflow.sdk.coders.Coder
 import com.google.cloud.dataflow.sdk.transforms.DoFn
 import com.google.cloud.dataflow.sdk.values.{PCollection, TupleTag, TupleTagList}
 
+import com.zendesk.scalaflow._
+
 trait BranchOps {
   implicit class RichBranchCollection[A : Coder](collection: PCollection[A]) {
     def branch(p1: A => Boolean, p2: A => Boolean): (PCollection[A], PCollection[A]) = {
@@ -53,6 +55,18 @@ trait BranchOps {
         outputs.get(tag1).setCoder(coder),
         outputs.get(tag2).setCoder(coder),
         outputs.get(tag3).setCoder(coder)
+      )
+    }
+
+    def branchMap[B1 : Coder, B2 : Coder](p1: PartialFunction[A, B1], p2: PartialFunction[A, B2]): (PCollection[B1], PCollection[B2]) = {
+      val (output1, output2) = branch(p1.isDefinedAt _, p2.isDefinedAt _)
+
+      val coder1 = implicitly[Coder[B1]]
+      val coder2 = implicitly[Coder[B2]]
+
+      (
+        output1.map(p1).setCoder(coder1),
+        output2.map(p2).setCoder(coder2)
       )
     }
   }

@@ -1,5 +1,6 @@
 package com.zendesk.scalaflow.sugar
 
+import com.google.cloud.dataflow.sdk.coders.Coder
 import com.google.cloud.dataflow.sdk.options.PipelineOptions.CheckEnabled._
 import com.google.cloud.dataflow.sdk.testing.{DataflowAssert, TestPipeline}
 import com.google.cloud.dataflow.sdk.transforms.Create
@@ -31,6 +32,19 @@ class BranchOpsSpec extends FlatSpec with Matchers {
     DataflowAssert.that(a).containsInAnyOrder(3, 6)
     DataflowAssert.that(b).containsInAnyOrder(1, 4)
     DataflowAssert.that(c).containsInAnyOrder(2, 5)
+
+    pipeline.run()
+  }
+
+  "branchMap" should "branch into two collections" in {
+    val pipeline = testPipeline()
+
+    val input = pipeline.begin.transform(Create.of(Left(1), Right(2), Left(3), Right(4)))
+
+    val (left, right) = input.branchMap({ case Left(x) => x }, { case Right(x) => x })
+
+    DataflowAssert.that(left).containsInAnyOrder(1, 3)
+    DataflowAssert.that(right).containsInAnyOrder(2, 4)
 
     pipeline.run()
   }
