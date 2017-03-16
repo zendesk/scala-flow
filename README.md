@@ -2,7 +2,7 @@
 
 _scala-flow_ is a lightweight library intended to make developing Google DataFlow jobs in Scala easier. The core dataflow classes are enriched to allow more idiomatic and concise Scala usage while preserving full access to the underlying Java SDK.
     
-Coders for Scala primitives and core classes have been implemented so that you can conveniently return these types from your PTransforms.
+Coders for Scala primitives and collection classes have been implemented so that you can conveniently return these types from your PTransforms. In addition you can easily create coders for your own case classes.
 
 **Caveat:** This library is still evolving rapidly as we improve our knowledge and understanding of Dataflow, so there will be a some flux in the API as we discover and refine what works well and what doesn't.
     
@@ -21,48 +21,130 @@ Pipeline.create(...)
 ## Usage
 
 #### Pipeline
+
+`Pipeline` has been enriched with a handful of methods.
+
+To create a `PCollection` from in-memory data use the `transform` method instead of `apply`. This method ensures that the coder is set correctly on the input data. 
  
-A `registerScalaCoders` methods has been added to `Pipeline`. This adds Coders for the following types:
-  
-  * `Int`, `Long`, `Double`
-  * `Option`, `Try`, `Either`
-  * `Tuple2` to `Tuple22`
-
-and then returns the pipeline itself so that it can be invoked fluently.
-
-In addition a `run` method has been added to the `POutput` type, so that if you have a pipeline with a single final stage you can invoke it directly. 
+In addition a `run` method has been added to the `POutput` type, so that you can fluently chain transforms then run your pipeline. For example:
     
 ```scala
-   val result = Pipeline.create(...)
-     .registerScalaCoders()
-     .apply(... /* transforms*/)
-     .apply(... /* more transforms*/)
-     .run()
+val result = Pipeline.create(...)
+  .transform(Create.of("foo", "bar"))
+  .apply(...transforms...)
+  .run()
 ```
   
-#### Basic Collections Methods
+#### Basic PCollection Methods
   
-`map`, `flatMap`, `filter` and `collect` methods have been added to `PCollection`. Each of these methods behaves identically to the standard Scala collections, with the notable exception of `flatMap`. This method turns each elements of the input `PCollection` into an `Iterable` (possibly of a different type) that is then flattened into the output `PCollection`.
+`PCollection` now has `map`, `flatMap`, `filter` and `collect` methods that each behave as you would expect.
     
-Simple example that puts it all together:
+Simple example:
+
+```scala
+val result = Pipeline.create(...)
+  .transform(Create.of("123", "456", "789"))
+  .flatMap(_.split(""))
+  .map(_.toInt)
+  .filter(_ < 5)
+  .collect {
+    case x if x % 3 == 0 => if (x % 5 == 0) "FizzBuzz" else "Fizz"
+    case x if x % 5 == 0 => "Buzz"
+  }
+  .run()
+```
+
+#### PCollection Extras
+
+##### Logging Side Effect
+
+A side-effecting method `foreach` has been added in order to allow handy debug logging. This method supplies each element of the `PCollection` to it's argument then passes on the element unchanged.
+For example:
+
+```scala
+val result = Pipeline(...)
+  .transform(Create.of("123", "456", "789"))
+  .foreach(println)
+  .apply(...continue as normal...) 
+```
+
+##### Extracting Timetamps
+
+`extractTimestamp` converts each element in the PCollection to a tuple with its corresponding timestamp. For example:
+```scala
+val collection: PCollection[(String, Instant)] = Pipeline.create(...)
+  .transform(Create.of("foo", "bar"))
+  .withTimestamps
+```
+
+##### Converting to a `KV`
+
+The `withKey` method provides a drop in replacement for the `WithKeys` transform.
+
+##### Joining PCollections of the same type
+
+The `flattenWith` method is the equivalent to the `Flatten` transform, allowing collections of the same type to be joined together. For example:
+
+```scala
+val first: PCollection[String] = ...
+val second: PCollection[String] = ...
+val third: PCollection[String] = ...
+  
+val combined: PCollection[String] = first.flattenWith(second, third)
+```
+  
+##### Naming your transforms
+
+To provide better visualization of the Pipeline graph and to allow updating of running jobs, you can name blocks of transforms using the `transformWith` method. For example:
 
 ```scala
   val result = Pipeline.create(...)
-    .registerScalaCoders()
-    .apply(Create.of("123", "456", "789"))
-    .flatMap(_.split(""))
-    .map(_.toInt)
-    .filter(_ < 5)
-    .collect {
-      case 1 => "One"
-      case 2 => "Two"
-      case 3 => "Three"
-      case _ => "A suffusion of yellow"
+    .transformWith("Load Resources") { _
+      .apply(TextIO.Read.from("gs://dataflow-samples/shakespeare/kinglear.txt"))
+    }
+    .transformWith("Split and count Words") { _
+      .flatMap(_.split("\\W+").filter(_.nonEmpty).toIterable)
+      .apply(Count.perElement[String])
+    }
+    .transformWith("Output Results") { _
+      .map(kv => kv.getKey + ": " + kv.getValue)
+      .apply(TextIO.Write.to("results.text"))
     }
     .run()
 ```
+ 
+Under the hood this method simply converts each nested block of methods into a `PTransform` class. 
 
-#### Joining PCollections
+##### ParDo Escape Hatch
+
+The `parDo` method provides an escape hatch in case none of the existing methods do what you want. Pass any arbitrary function wth a `DoFn` signature to this method and it will be converted to a `ParDo` transform. For example:
+```scala
+Pipeline.create(...)
+  .apply(TextIO.Read.from("gs://dataflow-samples/shakespeare/kinglear.txt"))
+  .parDo { (c: DoFn[String, String]#ProcessContext) =>
+    /* Do anything whatsoever here */
+    c.output(...)
+  }
+```
+
+#### KV Collection
+
+Several methods have been added specifically for KV collections:
+
+The `mapValue` and `flatMapValue` methods allow you to change the value of a `KV` pair without affecting they key. For example:
+```scala
+val result = Pipeline.create(...)
+  .transform(Create.of("123", "456", "789")
+  .withKey(_.toInt)
+  .mapValue(_.split(""))
+  .flatMapValue(_.mkString(".")
+
+/* Result contains KV(123, "1.2.3"), KV(456, "4.5.6."), KV(789, "7.8.9") */  
+```
+
+In addition there are `combinePerKey`, `topPerKey` and `groupPerKey` methods that work exactly the same as the Dataflow transform equivalents. 
+
+#### Joining KV PCollections
 
 In order to join two or more collections of `KV` values by key you can use `coGroupByKey`, a type-safe wrapper around Dataflow's [`CoGroupByKey`](https://cloud.google.com/dataflow/java-sdk/JavaDoc/com/google/cloud/dataflow/sdk/transforms/join/CoGroupByKey) transform.
 
@@ -70,45 +152,44 @@ In order to join two or more collections of `KV` values by key you can use `coGr
 val buyOrders: PCollection[KV[CustomerId, BuyOrder]] = ...
 val sellOrders: PCollection[KV[CustomerId, SellOrder]] = ...
 
-val allOrders: PCollection[KV[CustomerId, (Iterable[BuyOrder], Iterable[SellOrder])]] =
-  buyOrders.coGroupByKey(sellOrders)
+val allOrders: PCollection[KV[CustomerId, (Iterable[BuyOrder], Iterable[SellOrder])]] = buyOrders.coGroupByKey(sellOrders)
 ```
 
-#### Logging Side effect
+### Coders
 
-A side-effecting method `foreach` has been added to allow handy debug logging. This method applies it's argument to each element of the `PCollection` then passes it on unchanged.
-For example:
-
-```scala
-  val result = Pipeline(...)
-    .apply(Create.of("123", "456", "789"))
-    .foreach(println) // Local logging only - better to use Log4j for performance
-    .apply(... /*continue as normal*/) 
-```
+Implicit coders for the following types have been added:
+  
+  * `Int`, `Long`, `Double`
+  * `Option`, `Try`, `Either`
+  * `Tuple2` to `Tuple22`
+  * `Iterable`, `List`, `Set`, `Map`, `Array`
+  
+Every method mentioned above required a coder for its output type to be implicitly available. This happens by default for any of the types listed above (and also any arbitrary combination e.g. `List[Option[(Either[String, Int], Array[Double])]]`)
+If you create coders for any other types then you'll need to ensure that they are available in the implicit scope somewhere.
 
 #### Case Class Coders
 
-You can create a custom coder for your case class using the `registerCaseClass` method, for case classes with up to 22 members. 
-
-For example:
+You can create a custom coder for any case class containing up to 22 members using the `caseClassCoder` method. For example:
 ```scala
 case class Foo(name: String)
 case class Bar(name: String, age: Int)
+case class Qux[T](value : T)
 
-val pipeline = Pipeline(...)
-  .registerCaseClass(Foo)
-  .registerCaseClass(Bar)
-
+implicit val fooCoder = caseClassCoder(Foo)
+implicit val barCoder = caseClassCoder(Bar)
+implicit def quxCoder = caseClassCoder(Qux.apply[T] _)
 ```
 
-##### Note:
+The last line shows demonstrates how to create a coder for a generic types, this is essentially a much simpler replacement for a `CoderFactory`.
 
-Since case classes implement `Serializable` it isn't strictly needed to always register your classes. By default DataFlow will use the `SerializableCoder`. 
-However it's useful for the following cases:
+#### Serializable Coder
 
-* You wish to use a case class as a `KV` key. Serializable classes are not considered deterministic and are not allowed as keys.
-* You wish to have non-serializable values in your case class. As serializable classes must themselves only recursively contain serializable members, this limits the types your case class can contain.  
-* The Java serialization performance is inadequate
+By default Dataflow will always try to create a `SerializableCoder` if no other suitable coder can be found. `scala-flow` provides an equivalent with the `serializableCoder` method. For example:
+```scala
+class Foo(val name: String) extends Serializable
+ 
+implicit val fooCoder = serializableCoder(Foo) 
+```
 
 ## Why create a Scala Dataflow library? 
 
@@ -122,13 +203,17 @@ Hence this library that we feel fits in a niche between the two libraries above.
 
 ## Roadmap
 
-* Add Coders for further common Scala types, List, Seq, Map
-* General solution for case class coders
+* Create version of each method that accepts a name to better support updating pipelines 
 * Switch underlying support to Apache Beam
+
+## Credits
+
+The case class coder approach was heavily inspired by [Spray Json](https://github.com/spray/spray-json), a really nice, light weight JSON parser. 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/zendesk/scala-flow/
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/zendesk/scala-flow/
 
 ## Copyright and license
 
