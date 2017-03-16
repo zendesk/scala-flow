@@ -81,9 +81,9 @@ val collection: PCollection[(String, Instant)] = Pipeline.create(...)
 
 The `withKey` method provides a drop in replacement for the `WithKeys` transform.
 
-##### Joining PCollections of the same type
+##### Merging PCollections of the same type
 
-The `flattenWith` method is the equivalent to the `Flatten` transform, allowing collections of the same type to be joined together. For example:
+The `flattenWith` method is the equivalent to the `Flatten` transform, allowing collections of the same type to be merged together. For example:
 
 ```scala
 val first: PCollection[String] = ...
