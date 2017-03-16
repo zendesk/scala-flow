@@ -11,8 +11,7 @@ lazy val commonSettings = Seq(
     sys.env.getOrElse("ARTIFACTORY_HOST", "-"),
     sys.env.getOrElse("ARTIFACTORY_USER", "-"),
     sys.env.getOrElse("ARTIFACTORY_KEY", "-")
-  )
-)
+  ),
 
   // Publish POM rather than Ivy descriptor
   publishMavenStyle := true,
