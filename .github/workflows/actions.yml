@@ -7,7 +7,7 @@ on:
 jobs:
   main:
     name: scala-simple
-    runs-on: [ self-hosted, zendesk-stable]
+    runs-on: ubuntu-latest
     env:
       TRAVIS_SCALA_VERSION: 2.12.1
       SCALA_ENV: travis
