@@ -1,0 +1,38 @@
+name: repo-checks
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  main:
+    name: scala-simple
+    runs-on: [ self-hosted, zendesk-stable]
+    env:
+      TRAVIS_SCALA_VERSION: 2.12.1
+      SCALA_ENV: travis
+    steps:
+      - uses: zendesk/checkout@v2
+      - uses: zendesk/setup-java@v1
+        with:
+          java-version: "8"
+      - name: Cache SBT ivy cache
+        uses: zendesk/cache@v2
+        with:
+          path: "~/.ivy2/cache"
+          key: zendesk-stable-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+      - name: Cache SBT m2 cache
+        uses: zendesk/cache@v2
+        with:
+          path: "~/.m2/repository"
+          key: zendesk-stable-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+      - name: Cache SBT
+        uses: zendesk/cache@v2
+        with:
+          path: "~/.sbt"
+          key: zendesk-stable-sbt-${{ hashFiles('**/build.sbt') }}
+      - name: clean test
+        run: sbt clean test
+      - name: publish
+        if: github.ref == 'refs/heads/master'
+        run: sbt core/publish

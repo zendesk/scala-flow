@@ -1,4 +1,5 @@
 # scala-flow
+![repo-checks](https://github.com/zendesk/scala-flow/workflows/repo-checks/badge.svg)
 
 _scala-flow_ is a lightweight library intended to make developing Google DataFlow jobs in Scala easier. The core dataflow classes are enriched to allow more idiomatic and concise Scala usage while preserving full access to the underlying Java SDK.
     
