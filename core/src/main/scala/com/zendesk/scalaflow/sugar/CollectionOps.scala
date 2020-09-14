@@ -16,6 +16,16 @@ trait CollectionOps {
       collection.apply(asParDo(f)).setCoder(coder)
     }
 
+    /** Convert a `PCollection` of element type `A` to a `PCollection` of element type `B` using a
+      * function from `A` to `B`.
+      *
+      * {{{
+      *   people.map(person => person.name)
+      * }}}
+      *
+      * @param f A function that converts from `A` to `B`.
+      * @return A `PCollection` containing the values returned by applying `f`.
+      */
     def map[B : Coder](f: A => B): PCollection[B] = parDo {
       c => c.output(f(c.element))
     }
